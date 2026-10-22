@@ -515,7 +515,8 @@ export default function App() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                       <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
                       <YAxis stroke="#64748b" fontSize={12} />
-                      <Tooltip 
+                      <Tooltip
+                        cursor={false}
                         contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', color: '#f8fafc' }}
                         formatter={(value: any) => [`£${Number(value).toFixed(2)}`, '']}
                       />
@@ -734,7 +735,17 @@ export default function App() {
                         <td className="p-4 text-slate-200">{item.description}</td>
                         <td className="p-4 text-right font-mono font-bold text-rose-400">£{item.amount.toFixed(2)}</td>
                         <td className="p-4 text-xs">
-                          <span className="px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+                          <span className={`px-2.5 py-1 rounded-full font-medium border ${
+                            item.paymentType === 'Card'
+                              ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
+                              : item.paymentType === 'Cash'
+                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                              : item.paymentType === 'Bank Transfer'
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                              : item.paymentType === 'Direct Debit'
+                              ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                              : 'bg-slate-800 text-slate-300 border-slate-700'
+                          }`}>
                             {item.paymentType}
                           </span>
                         </td>
