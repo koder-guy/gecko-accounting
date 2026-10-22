@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, PoundSterling, TrendingDown, DollarSign, Wallet, Calendar, 
   Plus, Edit2, Trash2, Download, Layers, CreditCard,
-  ArrowUpRight, ArrowDownRight, Loader2
+  ArrowUpRight, ArrowDownRight, Loader2, Search
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend 
@@ -50,6 +50,8 @@ export default function App() {
 
   const [incomingList, setIncomingList] = useState<IncomingItem[]>([]);
   const [outgoingList, setOutgoingList] = useState<OutgoingItem[]>([]);
+  const [incomingSearch, setIncomingSearch] = useState<string>('');
+  const [outgoingSearch, setOutgoingSearch] = useState<string>('');
 
   const [showIncomingModal, setShowIncomingModal] = useState(false);
   const [editingIncoming, setEditingIncoming] = useState<IncomingItem | null>(null);
@@ -98,8 +100,23 @@ export default function App() {
         ]);
         const incData = await incRes.json();
         const outData = await outRes.json();
-        setIncomingList(Array.isArray(incData) ? incData.map((i: any) => ({ ...i, date: i.date.split('T')[0] })) : []);
-        setOutgoingList(Array.isArray(outData) ? outData.map((o: any) => ({ ...o, date: o.date.split('T')[0] })) : []);
+
+        setIncomingList(
+          Array.isArray(incData) 
+            ? incData
+                .map((i: any) => ({ ...i, date: i.date.split('T')[0] }))
+                .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            : []
+        );
+
+        setOutgoingList(
+          Array.isArray(outData) 
+            ? outData
+                .map((o: any) => ({ ...o, date: o.date.split('T')[0] }))
+                .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            : []
+        );
+
       } catch (err) {
         console.error('Failed to load transactions', err);
       }
@@ -115,6 +132,23 @@ export default function App() {
   const totalExpenses = outgoingList.reduce((sum, o) => sum + o.amount, 0);
   const netProfit = totalIncome - totalExpenses;
 
+  const filteredIncomingList = incomingList.filter(item => {
+    const query = incomingSearch.toLowerCase();
+    const matchDesc = item.description ? item.description.toLowerCase().includes(query) : false;
+    const matchNotes = item.notes ? item.notes.toLowerCase().includes(query) : false;
+    return matchDesc || matchNotes;
+  });
+
+  const filteredOutgoingList = outgoingList.filter(item => {
+    const query = outgoingSearch.toLowerCase();
+    const matchSeller = item.seller ? item.seller.toLowerCase().includes(query) : false;
+    const matchOrderNo = item.orderNo ? item.orderNo.toLowerCase().includes(query) : false;
+    const matchInvoiceNo = item.invoiceNo ? item.invoiceNo.toLowerCase().includes(query) : false;
+    const matchDesc = item.description ? item.description.toLowerCase().includes(query) : false;
+    const matchNotes = item.notes ? item.notes.toLowerCase().includes(query) : false;
+    return matchSeller || matchOrderNo || matchInvoiceNo || matchDesc || matchNotes;
+  });
+
   const handleSaveIncoming = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -125,7 +159,7 @@ export default function App() {
           body: JSON.stringify({ ...incForm, taxYearId: selectedTaxYearId })
         });
         const updated = await res.json();
-        setIncomingList(prev => prev.map(item => item.id === editingIncoming.id ? { ...updated, date: updated.date.split('T')[0] } : item));
+        setIncomingList(prev => prev.map(item => item.id === editingIncoming.id ? { ...updated, date: updated.date.split('T')[0] } : item).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       } else {
         const res = await fetch('/api/incoming', {
           method: 'POST',
@@ -133,7 +167,7 @@ export default function App() {
           body: JSON.stringify({ ...incForm, taxYearId: selectedTaxYearId })
         });
         const created = await res.json();
-        setIncomingList(prev => [{ ...created, date: created.date.split('T')[0] }, ...prev]);
+        setIncomingList(prev => [{ ...created, date: created.date.split('T')[0] }, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       }
       setShowIncomingModal(false);
       setEditingIncoming(null);
@@ -162,7 +196,7 @@ export default function App() {
           body: JSON.stringify({ ...outForm, taxYearId: selectedTaxYearId })
         });
         const updated = await res.json();
-        setOutgoingList(prev => prev.map(item => item.id === editingOutgoing.id ? { ...updated, date: updated.date.split('T')[0] } : item));
+        setOutgoingList(prev => prev.map(item => item.id === editingOutgoing.id ? { ...updated, date: updated.date.split('T')[0] } : item).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       } else {
         const res = await fetch('/api/outgoing', {
           method: 'POST',
@@ -170,7 +204,7 @@ export default function App() {
           body: JSON.stringify({ ...outForm, taxYearId: selectedTaxYearId })
         });
         const created = await res.json();
-        setOutgoingList(prev => [{ ...created, date: created.date.split('T')[0] }, ...prev]);
+        setOutgoingList(prev => [{ ...created, date: created.date.split('T')[0] }, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       }
       setShowOutgoingModal(false);
       setEditingOutgoing(null);
@@ -214,12 +248,12 @@ export default function App() {
 
     if (type === 'incoming') {
       headers = ['Date', 'Source', 'Description', 'Card Amount (£)', 'Cash Amount (£)', 'Total (£)', 'Notes'];
-      rows = incomingList.map(i => [
+      rows = filteredIncomingList.map(i => [
         i.date, i.source, `"${i.description}"`, i.cardAmount.toFixed(2), i.cashAmount.toFixed(2), (i.cardAmount + i.cashAmount).toFixed(2), `"${i.notes || ''}"`
       ]);
     } else {
       headers = ['Date', 'Seller', 'Order No', 'Invoice No', 'Description', 'Amount (£)', 'Payment Type', 'Notes'];
-      rows = outgoingList.map(o => [
+      rows = filteredOutgoingList.map(o => [
         o.date, `"${o.seller}"`, `"${o.orderNo || ''}"`, `"${o.invoiceNo || ''}"`, `"${o.description}"`, o.amount.toFixed(2), o.paymentType, `"${o.notes || ''}"`
       ]);
     }
@@ -234,14 +268,12 @@ export default function App() {
     document.body.removeChild(link);
   };
 
-
-
-// Group transactions by month for the chart
+  // Group transactions by month for the chart
   const monthlyMap: { [key: string]: { month: string; incoming: number; outgoing: number } } = {};
 
   incomingList.forEach(item => {
     if (!item.date) return;
-    const monthKey = item.date.substring(0, 7); // e.g., "2024-05"
+    const monthKey = item.date.substring(0, 7);
     if (!monthlyMap[monthKey]) {
       monthlyMap[monthKey] = { month: monthKey, incoming: 0, outgoing: 0 };
     }
@@ -258,8 +290,6 @@ export default function App() {
   });
 
   const chartData = Object.values(monthlyMap).sort((a, b) => a.month.localeCompare(b.month));
-
-
 
   if (loading) {
     return (
@@ -278,7 +308,7 @@ export default function App() {
               <Wallet className="w-6 h-6 stroke-[2.5]" />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight tracking-wide text-white">Gecko</h1>
+              <h1 className="font-bold text-lg leading-tight tracking-wide text-white">Deco Gecko</h1>
               <span className="text-xs text-emerald-400 font-medium tracking-wider uppercase">Accounting</span>
             </div>
           </div>
@@ -473,8 +503,7 @@ export default function App() {
               </div>
             </div>
 
-
-{/* Monthly Financial Overview Chart */}
+            {/* Monthly Financial Overview Chart */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
               <h3 className="font-semibold text-white text-sm mb-6 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-emerald-400" /> Monthly Incoming vs Outgoing
@@ -550,7 +579,30 @@ export default function App() {
         )}
 
         {activeTab === 'incoming' && (
-          <div className="p-8">
+          <div className="p-8 space-y-4">
+            <div className="flex justify-end items-center">
+              <div className="relative w-72">
+                <input
+                  type="text"
+                  placeholder="Search description or notes..."
+                  value={incomingSearch}
+                  onChange={(e) => setIncomingSearch(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-xs rounded-lg pl-9 pr-8 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder-slate-500"
+                />
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                {incomingSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setIncomingSearch('')}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs bg-slate-800 hover:bg-slate-700 w-4 h-4 rounded-full flex items-center justify-center transition-colors"
+                    title="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
@@ -567,7 +619,7 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800 text-slate-300">
-                    {incomingList.map(item => (
+                    {filteredIncomingList.map(item => (
                       <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
                         <td className="p-4 font-mono text-xs">{item.date}</td>
                         <td className="p-4">
@@ -575,7 +627,7 @@ export default function App() {
                             item.source === 'Square' 
                               ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' 
                               : item.source === 'Card'
-                              ? 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20'
+                              ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
                               : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                           }`}>
                             {item.source}
@@ -617,10 +669,10 @@ export default function App() {
                         </td>
                       </tr>
                     ))}
-                    {incomingList.length === 0 && (
+                    {filteredIncomingList.length === 0 && (
                       <tr>
                         <td colSpan={8} className="p-8 text-center text-slate-500">
-                          No incoming transactions found for this tax year.
+                          {incomingSearch ? 'No matching incoming transactions found.' : 'No incoming transactions found for this tax year.'}
                         </td>
                       </tr>
                     )}
@@ -632,7 +684,30 @@ export default function App() {
         )}
 
         {activeTab === 'outgoing' && (
-          <div className="p-8">
+          <div className="p-8 space-y-4">
+            <div className="flex justify-end items-center">
+              <div className="relative w-72">
+                <input
+                  type="text"
+                  placeholder="Search seller, order, invoice..."
+                  value={outgoingSearch}
+                  onChange={(e) => setOutgoingSearch(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-xs rounded-lg pl-9 pr-8 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder-slate-500"
+                />
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                {outgoingSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setOutgoingSearch('')}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs bg-slate-800 hover:bg-slate-700 w-4 h-4 rounded-full flex items-center justify-center transition-colors"
+                    title="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
@@ -650,7 +725,7 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800 text-slate-300">
-                    {outgoingList.map(item => (
+                    {filteredOutgoingList.map(item => (
                       <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
                         <td className="p-4 font-mono text-xs">{item.date}</td>
                         <td className="p-4 font-medium text-white">{item.seller}</td>
@@ -696,10 +771,10 @@ export default function App() {
                         </td>
                       </tr>
                     ))}
-                    {outgoingList.length === 0 && (
+                    {filteredOutgoingList.length === 0 && (
                       <tr>
                         <td colSpan={9} className="p-8 text-center text-slate-500">
-                          No outgoing transactions found for this tax year.
+                          {outgoingSearch ? 'No matching outgoing transactions found.' : 'No outgoing transactions found for this tax year.'}
                         </td>
                       </tr>
                     )}
@@ -724,8 +799,8 @@ export default function App() {
                     )}
                   </div>
                   <div className="space-y-2 text-xs text-slate-400">
-                    <p>Start Date: <span className="text-slate-200">{ty.startDate.split('T')[0]}</span></p>
-                    <p>End Date: <span className="text-slate-200">{ty.endDate.split('T')[0]}</span></p>
+                    <p>Start Date: <span className="text-slate-200">{ty.startDate ? ty.startDate.toString().split('T')[0] : '-'}</span></p>
+                    <p>End Date: <span className="text-slate-200">{ty.endDate ? ty.endDate.toString().split('T')[0] : '-'}</span></p>
                   </div>
                   <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
                     <button
@@ -823,13 +898,13 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowIncomingModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 font-medium"
+                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold shadow-lg shadow-emerald-600/20"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-lg shadow-emerald-600/20 transition-all"
                 >
                   Save Record
                 </button>
@@ -943,24 +1018,25 @@ export default function App() {
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"
                 />
               </div>
-<div className="flex justify-end gap-3 pt-3">
-  <button
-    type="button"
-    onClick={() => {
-      setShowOutgoingModal(false);
-      setEditingOutgoing(null);
-    }}
-    className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
-  >
-    Cancel
-  </button>
-  <button
-    type="submit"
-    className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-lg shadow-emerald-600/20 transition-all"
-  >
-    Save Record
-  </button>
-</div>
+
+              <div className="flex justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowOutgoingModal(false);
+                    setEditingOutgoing(null);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-lg shadow-emerald-600/20 transition-all"
+                >
+                  Save Record
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -1006,13 +1082,13 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowTaxYearModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 font-medium"
+                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold shadow-lg shadow-emerald-600/20"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-lg shadow-emerald-600/20 transition-all"
                 >
                   Create
                 </button>
