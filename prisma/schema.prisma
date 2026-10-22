@@ -1,0 +1,50 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model TaxYear {
+  id                   String                @id @default(uuid())
+  label                String                @unique
+  startDate            DateTime
+  endDate              DateTime
+  isCurrent            Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  incomingTransactions IncomingTransaction[]
+  outgoingTransactions OutgoingTransaction[]
+}
+
+model IncomingTransaction {
+  id          String   @id @default(uuid())
+  date        DateTime
+  source      String
+  description String
+  cardAmount  Float    @default(0.0)
+  cashAmount  Float    @default(0.0)
+  notes       String?  @db.Text
+  taxYearId   String
+  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model OutgoingTransaction {
+  id          String   @id @default(uuid())
+  date        DateTime
+  seller      String
+  orderNo     String?
+  invoiceNo   String?
+  description String
+  amount      Float
+  paymentType String
+  notes       String?  @db.Text
+  taxYearId   String
+  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
