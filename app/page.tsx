@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  TrendingUp, TrendingDown, DollarSign, Wallet, Calendar, 
+  TrendingUp, PoundSterling, TrendingDown, DollarSign, Wallet, Calendar, 
   Plus, Edit2, Trash2, Download, Layers, CreditCard,
   ArrowUpRight, ArrowDownRight, Loader2
 } from 'lucide-react';
+import { 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend 
+} from 'recharts';
 
 interface TaxYear {
   id: string;
@@ -231,6 +234,33 @@ export default function App() {
     document.body.removeChild(link);
   };
 
+
+
+// Group transactions by month for the chart
+  const monthlyMap: { [key: string]: { month: string; incoming: number; outgoing: number } } = {};
+
+  incomingList.forEach(item => {
+    if (!item.date) return;
+    const monthKey = item.date.substring(0, 7); // e.g., "2024-05"
+    if (!monthlyMap[monthKey]) {
+      monthlyMap[monthKey] = { month: monthKey, incoming: 0, outgoing: 0 };
+    }
+    monthlyMap[monthKey].incoming += (item.cardAmount + item.cashAmount);
+  });
+
+  outgoingList.forEach(item => {
+    if (!item.date) return;
+    const monthKey = item.date.substring(0, 7);
+    if (!monthlyMap[monthKey]) {
+      monthlyMap[monthKey] = { month: monthKey, incoming: 0, outgoing: 0 };
+    }
+    monthlyMap[monthKey].outgoing += item.amount;
+  });
+
+  const chartData = Object.values(monthlyMap).sort((a, b) => a.month.localeCompare(b.month));
+
+
+
   if (loading) {
     return (
       <div className="flex h-screen bg-slate-950 items-center justify-center text-slate-100">
@@ -370,6 +400,7 @@ export default function App() {
 
             {activeTab === 'outgoing' && (
               <button
+                type="button"
                 onClick={() => {
                   setEditingOutgoing(null);
                   setOutForm({ date: new Date().toISOString().split('T')[0], seller: '', orderNo: '', invoiceNo: '', description: '', amount: '0', paymentType: 'Card', notes: '' });
@@ -432,13 +463,43 @@ export default function App() {
                 <div className="flex items-center justify-between text-slate-400 mb-3">
                   <span className="text-xs font-medium uppercase tracking-wider">Net Profit</span>
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${netProfit >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                    <DollarSign className="w-4 h-4" />
+                    <PoundSterling className="w-4 h-4" />
                   </div>
                 </div>
                 <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   £{netProfit.toFixed(2)}
                 </p>
                 <p className="text-xs text-slate-500 mt-2">Income minus Outgoing</p>
+              </div>
+            </div>
+
+
+{/* Monthly Financial Overview Chart */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+              <h3 className="font-semibold text-white text-sm mb-6 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-400" /> Monthly Incoming vs Outgoing
+              </h3>
+              <div className="h-72 w-full">
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
+                      <YAxis stroke="#64748b" fontSize={12} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', color: '#f8fafc' }}
+                        formatter={(value: any) => [`£${Number(value).toFixed(2)}`, '']}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                      <Bar dataKey="incoming" name="Incoming (£)" fill="#10b981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="outgoing" name="Outgoing (£)" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-slate-500 text-xs">
+                    No transaction data available for charting in this tax year.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -606,6 +667,7 @@ export default function App() {
                         <td className="p-4 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <button
+                              type="button"
                               onClick={() => {
                                 setEditingOutgoing(item);
                                 setOutForm({
@@ -881,22 +943,24 @@ export default function App() {
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"
                 />
               </div>
-
-              <div className="flex justify-end gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowIncomingModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold shadow-lg shadow-emerald-600/20"
-                >
-                  Save Record
-                </button>
-              </div>
+<div className="flex justify-end gap-3 pt-3">
+  <button
+    type="button"
+    onClick={() => {
+      setShowOutgoingModal(false);
+      setEditingOutgoing(null);
+    }}
+    className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
+  >
+    Cancel
+  </button>
+  <button
+    type="submit"
+    className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-lg shadow-emerald-600/20 transition-all"
+  >
+    Save Record
+  </button>
+</div>
             </form>
           </div>
         </div>
