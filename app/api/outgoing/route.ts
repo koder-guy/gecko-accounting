@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+
 
 export async function GET(request: Request) {
   try {
@@ -16,24 +17,31 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const item = await prisma.outgoingTransaction.create({
+    const body = await req.json();
+    const { taxYearId, date, seller, orderNo, invoiceNo, description, amount, paymentType, notes, documentUrl } = body;
+
+    const record = await prisma.outgoingTransaction.create({
       data: {
-        date: new Date(body.date),
-        seller: body.seller,
-        orderNo: body.orderNo || '',
-        invoiceNo: body.invoiceNo || '',
-        description: body.description,
-        amount: parseFloat(body.amount) || 0,
-        paymentType: body.paymentType,
-        notes: body.notes || '',
-        taxYearId: body.taxYearId,
+        taxYearId,
+        date: new Date(date),
+        seller,
+        orderNo: orderNo || null,
+        invoiceNo: invoiceNo || null,
+        description,
+        amount: parseFloat(amount) || 0,
+        paymentType,
+        notes: notes || null,
+        documentUrl: documentUrl || null,
       },
     });
-    return NextResponse.json(item);
+
+    return NextResponse.json(record, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create outgoing transaction' }, { status: 500 });
+    console.error('Failed to create outgoing transaction:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+

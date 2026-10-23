@@ -89,6 +89,12 @@ export default function App() {
 
   const [taxYearForm, setTaxYearForm] = useState({ label: '', startDate: '', endDate: '' });
 
+  const getFileExtension = (url?: string) => {
+    if (!url) return 'PDF';
+    const parts = url.split('.');
+    return parts.length > 1 ? parts.pop()!.toUpperCase() : 'PDF';
+  };
+
   // Upload helper
   const uploadDocument = async (file: File): Promise<string> => {
     const formData = new FormData();
@@ -713,12 +719,10 @@ export default function App() {
                         <td className="p-4">
                           {item.documentUrl ? (
                             <a 
-                              href={item.documentUrl} 
-                              target="_blank" 
-                              rel="noreferrer"
+                              href={`/api/download?file=${encodeURIComponent(item.documentUrl!)}`}
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1 text-xs text-[var(--primary-light)] hover:underline">
-                              <Paperclip className="w-3.5 h-3.5" /> PDF
+                              <Paperclip className="w-3.5 h-3.5" /> {getFileExtension(item.documentUrl)}
                             </a>
                           ) : (
                             <span className="text-slate-600 text-xs">-</span>
@@ -844,12 +848,10 @@ export default function App() {
                         <td className="p-4">
                           {item.documentUrl ? (
                             <a 
-                              href={item.documentUrl} 
-                              target="_blank" 
-                              rel="noreferrer"
+                              href={`/api/download?file=${encodeURIComponent(item.documentUrl!)}`} 
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1 text-xs text-[var(--primary-light)] hover:underline">
-                              <Paperclip className="w-3.5 h-3.5" /> PDF
+                              <Paperclip className="w-3.5 h-3.5" /> {getFileExtension(item.documentUrl)}
                             </a>
                           ) : (
                             <span className="text-slate-600 text-xs">-</span>
@@ -1008,12 +1010,10 @@ export default function App() {
                 </div>
                 {viewingIncoming.documentUrl && (
                   <a
-                    href={viewingIncoming.documentUrl}
+                    href={`/api/download?file=${encodeURIComponent(viewingIncoming.documentUrl)}`}
                     download
-                    target="_blank"
-                    rel="noreferrer"
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--primary)]/20 hover:bg-[var(--primary)]/30 text-[var(--primary-light)] border border-[var(--primary)]/30 text-xs font-semibold transition-all">
-                    <Download className="w-3.5 h-3.5" /> Download PDF
+                    <Download className="w-3.5 h-3.5" /> Download {getFileExtension(viewingIncoming.documentUrl)}
                   </a>
                 )}
               </div>
@@ -1142,12 +1142,10 @@ export default function App() {
                 </div>
                 {viewingOutgoing.documentUrl && (
                   <a
-                    href={viewingOutgoing.documentUrl}
+                    href={`/api/download?file=${encodeURIComponent(viewingOutgoing.documentUrl)}`}
                     download
-                    target="_blank"
-                    rel="noreferrer"
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 text-xs font-semibold transition-all">
-                    <Download className="w-3.5 h-3.5" /> Download PDF
+                    <Download className="w-3.5 h-3.5" /> Download {getFileExtension(viewingOutgoing.documentUrl)}
                   </a>
                 )}
               </div>

@@ -1,25 +1,32 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const body = await request.json();
-    const item = await prisma.outgoingTransaction.update({
-      where: { id: params.id },
+    const { id } = params;
+    const body = await req.json();
+    const { taxYearId, date, seller, orderNo, invoiceNo, description, amount, paymentType, notes, documentUrl } = body;
+
+    const updated = await prisma.outgoingTransaction.update({
+      where: { id },
       data: {
-        date: new Date(body.date),
-        seller: body.seller,
-        orderNo: body.orderNo || '',
-        invoiceNo: body.invoiceNo || '',
-        description: body.description,
-        amount: parseFloat(body.amount) || 0,
-        paymentType: body.paymentType,
-        notes: body.notes || '',
+        taxYearId,
+        date: new Date(date),
+        seller,
+        orderNo: orderNo || null,
+        invoiceNo: invoiceNo || null,
+        description,
+        amount: parseFloat(amount) || 0,
+        paymentType,
+        notes: notes || null,
+        documentUrl: documentUrl || null, // <--- Crucial
       },
     });
-    return NextResponse.json(item);
+
+    return NextResponse.json(updated);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update outgoing transaction' }, { status: 500 });
+    console.error('Failed to update outgoing transaction:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
