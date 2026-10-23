@@ -28,6 +28,7 @@ model IncomingTransaction {
   cardAmount  Float    @default(0.0)
   cashAmount  Float    @default(0.0)
   notes       String?  @db.Text
+  documentUrl String?  @db.VarChar(500)
   taxYearId   String
   taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
@@ -44,6 +45,7 @@ model OutgoingTransaction {
   amount      Float
   paymentType String
   notes       String?  @db.Text
+  documentUrl String?  @db.VarChar(500)
   taxYearId   String
   taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())

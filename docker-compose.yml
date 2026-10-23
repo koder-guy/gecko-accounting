@@ -9,6 +9,8 @@ services:
     environment:
       - DATABASE_URL=mysql://gecko_user:gecko_password@db:3306/gecko_accounting
       - NODE_ENV=production
+    volumes:
+      - gecko_uploads:/app/public/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -33,3 +35,5 @@ services:
 
 volumes:
   mysql_data:
+  gecko_uploads:
+

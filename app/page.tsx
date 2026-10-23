@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, PoundSterling, TrendingDown, DollarSign, Wallet, Calendar, 
   Plus, Edit2, Trash2, Download, Layers, CreditCard,
-  ArrowUpRight, ArrowDownRight, Loader2, Search
+  ArrowUpRight, ArrowDownRight, Loader2, Search, Eye, X, FileText, Tag, Hash,
+  Paperclip, FileCheck, ExternalLink
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend 
@@ -27,6 +28,7 @@ interface IncomingItem {
   cardAmount: number;
   cashAmount: number;
   notes: string;
+  documentUrl?: string;
 }
 
 interface OutgoingItem {
@@ -40,14 +42,15 @@ interface OutgoingItem {
   amount: number;
   paymentType: 'Card' | 'Cash' | 'Bank Transfer' | 'Direct Debit' | 'Other';
   notes: string;
+  documentUrl?: string;
 }
 
 const THEME = {
-  primary: '#5e6ad2',        //Indigo Accent (#5e6ad2)
-  primaryHover: '#4b55c2',   //Darker Indigo Hover
-  primaryLight: '#828df0',   //Light Indigo
-  gradientFrom: '#5e6ad2',   //Gradient Start
-  gradientTo: '#939aff',     //Gradient End
+  primary: '#5e6ad2',        // Indigo Accent (#5e6ad2)
+  primaryHover: '#4b55c2',   // Darker Indigo Hover
+  primaryLight: '#828df0',   // Light Indigo
+  gradientFrom: '#5e6ad2',   // Gradient Start
+  gradientTo: '#939aff',     // Gradient End
 };
 
 export default function App() {
@@ -67,15 +70,37 @@ export default function App() {
   const [editingOutgoing, setEditingOutgoing] = useState<OutgoingItem | null>(null);
   const [showTaxYearModal, setShowTaxYearModal] = useState(false);
 
-  const [incForm, setIncForm] = useState<{ date: string; source: 'Square' | 'Card' | 'Cash'; description: string; cardAmount: string; cashAmount: string; notes: string }>({
-    date: new Date().toISOString().split('T')[0], source: 'Square', description: '', cardAmount: '0', cashAmount: '0', notes: ''
+  // File upload state
+  const [incFile, setIncFile] = useState<File | null>(null);
+  const [outFile, setOutFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Detail viewing state
+  const [viewingIncoming, setViewingIncoming] = useState<IncomingItem | null>(null);
+  const [viewingOutgoing, setViewingOutgoing] = useState<OutgoingItem | null>(null);
+
+  const [incForm, setIncForm] = useState<{ date: string; source: 'Square' | 'Card' | 'Cash'; description: string; cardAmount: string; cashAmount: string; notes: string; documentUrl?: string }>({
+    date: new Date().toISOString().split('T')[0], source: 'Square', description: '', cardAmount: '0', cashAmount: '0', notes: '', documentUrl: ''
   });
 
-  const [outForm, setOutForm] = useState<{ date: string; seller: string; orderNo: string; invoiceNo: string; description: string; amount: string; paymentType: 'Card' | 'Cash' | 'Bank Transfer' | 'Direct Debit' | 'Other'; notes: string }>({
-    date: new Date().toISOString().split('T')[0], seller: '', orderNo: '', invoiceNo: '', description: '', amount: '0', paymentType: 'Card', notes: ''
+  const [outForm, setOutForm] = useState<{ date: string; seller: string; orderNo: string; invoiceNo: string; description: string; amount: string; paymentType: 'Card' | 'Cash' | 'Bank Transfer' | 'Direct Debit' | 'Other'; notes: string; documentUrl?: string }>({
+    date: new Date().toISOString().split('T')[0], seller: '', orderNo: '', invoiceNo: '', description: '', amount: '0', paymentType: 'Card', notes: '', documentUrl: ''
   });
 
   const [taxYearForm, setTaxYearForm] = useState({ label: '', startDate: '', endDate: '' });
+
+  // Upload helper
+  const uploadDocument = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('File upload failed');
+    const data = await res.json();
+    return data.url; // Returns URL like /uploads/filename.pdf
+  };
 
   // Fetch initial data
   useEffect(() => {
@@ -160,11 +185,19 @@ export default function App() {
   const handleSaveIncoming = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setUploading(true);
+      let documentUrl = incForm.documentUrl || '';
+      if (incFile) {
+        documentUrl = await uploadDocument(incFile);
+      }
+
+      const payload = { ...incForm, documentUrl, taxYearId: selectedTaxYearId };
+
       if (editingIncoming) {
         const res = await fetch(`/api/incoming/${editingIncoming.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...incForm, taxYearId: selectedTaxYearId })
+          body: JSON.stringify(payload)
         });
         const updated = await res.json();
         setIncomingList(prev => prev.map(item => item.id === editingIncoming.id ? { ...updated, date: updated.date.split('T')[0] } : item).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -172,15 +205,18 @@ export default function App() {
         const res = await fetch('/api/incoming', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...incForm, taxYearId: selectedTaxYearId })
+          body: JSON.stringify(payload)
         });
         const created = await res.json();
         setIncomingList(prev => [{ ...created, date: created.date.split('T')[0] }, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       }
       setShowIncomingModal(false);
       setEditingIncoming(null);
+      setIncFile(null);
     } catch (err) {
       console.error('Failed to save incoming transaction', err);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -189,6 +225,7 @@ export default function App() {
     try {
       await fetch(`/api/incoming/${id}`, { method: 'DELETE' });
       setIncomingList(prev => prev.filter(i => i.id !== id));
+      if (viewingIncoming?.id === id) setViewingIncoming(null);
     } catch (err) {
       console.error('Failed to delete', err);
     }
@@ -197,11 +234,19 @@ export default function App() {
   const handleSaveOutgoing = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setUploading(true);
+      let documentUrl = outForm.documentUrl || '';
+      if (outFile) {
+        documentUrl = await uploadDocument(outFile);
+      }
+
+      const payload = { ...outForm, documentUrl, taxYearId: selectedTaxYearId };
+
       if (editingOutgoing) {
         const res = await fetch(`/api/outgoing/${editingOutgoing.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...outForm, taxYearId: selectedTaxYearId })
+          body: JSON.stringify(payload)
         });
         const updated = await res.json();
         setOutgoingList(prev => prev.map(item => item.id === editingOutgoing.id ? { ...updated, date: updated.date.split('T')[0] } : item).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -209,15 +254,18 @@ export default function App() {
         const res = await fetch('/api/outgoing', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...outForm, taxYearId: selectedTaxYearId })
+          body: JSON.stringify(payload)
         });
         const created = await res.json();
         setOutgoingList(prev => [{ ...created, date: created.date.split('T')[0] }, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       }
       setShowOutgoingModal(false);
       setEditingOutgoing(null);
+      setOutFile(null);
     } catch (err) {
       console.error('Failed to save outgoing transaction', err);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -226,6 +274,7 @@ export default function App() {
     try {
       await fetch(`/api/outgoing/${id}`, { method: 'DELETE' });
       setOutgoingList(prev => prev.filter(o => o.id !== id));
+      if (viewingOutgoing?.id === id) setViewingOutgoing(null);
     } catch (err) {
       console.error('Failed to delete', err);
     }
@@ -255,14 +304,14 @@ export default function App() {
     let rows: string[][] = [];
 
     if (type === 'incoming') {
-      headers = ['Date', 'Source', 'Description', 'Card Amount (£)', 'Cash Amount (£)', 'Total (£)', 'Notes'];
+      headers = ['Date', 'Source', 'Description', 'Card Amount (£)', 'Cash Amount (£)', 'Total (£)', 'Notes', 'Document URL'];
       rows = filteredIncomingList.map(i => [
-        i.date, i.source, `"${i.description}"`, i.cardAmount.toFixed(2), i.cashAmount.toFixed(2), (i.cardAmount + i.cashAmount).toFixed(2), `"${i.notes || ''}"`
+        i.date, i.source, `"${i.description}"`, i.cardAmount.toFixed(2), i.cashAmount.toFixed(2), (i.cardAmount + i.cashAmount).toFixed(2), `"${i.notes || ''}"`, `"${i.documentUrl || ''}"`
       ]);
     } else {
-      headers = ['Date', 'Seller', 'Order No', 'Invoice No', 'Description', 'Amount (£)', 'Payment Type', 'Notes'];
+      headers = ['Date', 'Seller', 'Order No', 'Invoice No', 'Description', 'Amount (£)', 'Payment Type', 'Notes', 'Document URL'];
       rows = filteredOutgoingList.map(o => [
-        o.date, `"${o.seller}"`, `"${o.orderNo || ''}"`, `"${o.invoiceNo || ''}"`, `"${o.description}"`, o.amount.toFixed(2), o.paymentType, `"${o.notes || ''}"`
+        o.date, `"${o.seller}"`, `"${o.orderNo || ''}"`, `"${o.invoiceNo || ''}"`, `"${o.description}"`, o.amount.toFixed(2), o.paymentType, `"${o.notes || ''}"`, `"${o.documentUrl || ''}"`
       ]);
     }
 
@@ -276,7 +325,7 @@ export default function App() {
     document.body.removeChild(link);
   };
 
-  // Group transactions by month for the chart
+  // Group transactions by month for chart
   const monthlyMap: { [key: string]: { month: string; incoming: number; outgoing: number } } = {};
 
   incomingList.forEach(item => {
@@ -428,7 +477,8 @@ export default function App() {
               <button
                 onClick={() => {
                   setEditingIncoming(null);
-                  setIncForm({ date: new Date().toISOString().split('T')[0], source: 'Square', description: '', cardAmount: '0', cashAmount: '0', notes: '' });
+                  setIncForm({ date: new Date().toISOString().split('T')[0], source: 'Square', description: '', cardAmount: '0', cashAmount: '0', notes: '', documentUrl: '' });
+                  setIncFile(null);
                   setShowIncomingModal(true);
                 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-semibold shadow-lg shadow-[var(--primary)]/20 transition-all">
@@ -441,7 +491,8 @@ export default function App() {
                 type="button"
                 onClick={() => {
                   setEditingOutgoing(null);
-                  setOutForm({ date: new Date().toISOString().split('T')[0], seller: '', orderNo: '', invoiceNo: '', description: '', amount: '0', paymentType: 'Card', notes: '' });
+                  setOutForm({ date: new Date().toISOString().split('T')[0], seller: '', orderNo: '', invoiceNo: '', description: '', amount: '0', paymentType: 'Card', notes: '', documentUrl: '' });
+                  setOutFile(null);
                   setShowOutgoingModal(true);
                 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-semibold shadow-lg shadow-[var(--primary)]/20 transition-all">
@@ -509,7 +560,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Monthly Financial Overview Chart */}
+            {/* Monthly Chart */}
             <div className="bg-[#0d1015] border border-[#1e2633] rounded-xl p-6">
               <h3 className="font-semibold text-white text-sm mb-6 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-[var(--primary-light)]" /> Monthly Incoming vs Outgoing
@@ -549,9 +600,15 @@ export default function App() {
                 </div>
                 <div className="space-y-3">
                   {incomingList.slice(0, 5).map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-[#161b24]/40 border border-[#1e2633]">
+                    <div 
+                      key={item.id} 
+                      onClick={() => setViewingIncoming(item)}
+                      className="flex items-center justify-between p-3 rounded-lg bg-[#161b24]/40 border border-[#1e2633] hover:bg-[#161b24] hover:border-[#283244] cursor-pointer transition-all">
                       <div>
-                        <p className="text-sm font-medium text-slate-200">{item.description}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-slate-200">{item.description}</p>
+                          {item.documentUrl && <Paperclip className="w-3 h-3 text-[var(--primary-light)]" />}
+                        </div>
                         <p className="text-xs text-slate-500">{item.date} • {item.source}</p>
                       </div>
                       <span className="text-sm font-semibold text-[var(--primary-light)]">+£{(item.cardAmount + item.cashAmount).toFixed(2)}</span>
@@ -570,9 +627,15 @@ export default function App() {
                 </div>
                 <div className="space-y-3">
                   {outgoingList.slice(0, 5).map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-[#161b24]/40 border border-[#1e2633]">
+                    <div 
+                      key={item.id} 
+                      onClick={() => setViewingOutgoing(item)}
+                      className="flex items-center justify-between p-3 rounded-lg bg-[#161b24]/40 border border-[#1e2633] hover:bg-[#161b24] hover:border-[#283244] cursor-pointer transition-all">
                       <div>
-                        <p className="text-sm font-medium text-slate-200">{item.description}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-slate-200">{item.description}</p>
+                          {item.documentUrl && <Paperclip className="w-3 h-3 text-rose-400" />}
+                        </div>
                         <p className="text-xs text-slate-500">{item.date} • {item.seller}</p>
                       </div>
                       <span className="text-sm font-semibold text-rose-400">-£{item.amount.toFixed(2)}</span>
@@ -585,6 +648,7 @@ export default function App() {
           </div>
         )}
 
+        {/* INCOMING TABLE */}
         {activeTab === 'incoming' && (
           <div className="p-8 space-y-4">
             <div className="flex justify-end items-center">
@@ -600,8 +664,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setIncomingSearch('')}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs bg-[#161b24] hover:bg-slate-700 w-4 h-4 rounded-full flex items-center justify-center transition-colors"
-                    title="Clear search">
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs bg-[#161b24] hover:bg-slate-700 w-4 h-4 rounded-full flex items-center justify-center transition-colors">
                     ×
                   </button>
                 )}
@@ -619,13 +682,16 @@ export default function App() {
                       <th className="p-4 font-semibold text-right">Card Amount</th>
                       <th className="p-4 font-semibold text-right">Cash Amount</th>
                       <th className="p-4 font-semibold text-right">Total (£)</th>
-                      <th className="p-4 font-semibold">Notes</th>
+                      <th className="p-4 font-semibold">Doc</th>
                       <th className="p-4 font-semibold text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800 text-slate-300">
                     {filteredIncomingList.map(item => (
-                      <tr key={item.id} className="hover:bg-[#161b24]/30 transition-colors">
+                      <tr 
+                        key={item.id} 
+                        onClick={() => setViewingIncoming(item)}
+                        className="hover:bg-[#161b24]/50 cursor-pointer transition-colors group">
                         <td className="p-4 font-mono text-xs">{item.date}</td>
                         <td className="p-4">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
@@ -638,15 +704,34 @@ export default function App() {
                             {item.source}
                           </span>
                         </td>
-                        <td className="p-4 font-medium text-white">{item.description}</td>
+                        <td className="p-4 font-medium text-white group-hover:text-[var(--primary-light)] transition-colors">{item.description}</td>
                         <td className="p-4 text-right font-mono">£{item.cardAmount.toFixed(2)}</td>
                         <td className="p-4 text-right font-mono">£{item.cashAmount.toFixed(2)}</td>
                         <td className="p-4 text-right font-mono font-bold text-[var(--primary-light)]">
                           £{(item.cardAmount + item.cashAmount).toFixed(2)}
                         </td>
-                        <td className="p-4 text-xs text-slate-400 max-w-xs truncate">{item.notes || '-'}</td>
-                        <td className="p-4 text-center">
+                        <td className="p-4">
+                          {item.documentUrl ? (
+                            <a 
+                              href={item.documentUrl} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-xs text-[var(--primary-light)] hover:underline">
+                              <Paperclip className="w-3.5 h-3.5" /> PDF
+                            </a>
+                          ) : (
+                            <span className="text-slate-600 text-xs">-</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => setViewingIncoming(item)}
+                              className="p-1.5 rounded bg-[#161b24] hover:bg-slate-700 text-slate-300"
+                              title="View Details">
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
                             <button
                               onClick={() => {
                                 setEditingIncoming(item);
@@ -657,15 +742,19 @@ export default function App() {
                                   cardAmount: item.cardAmount.toString(),
                                   cashAmount: item.cashAmount.toString(),
                                   notes: item.notes || '',
+                                  documentUrl: item.documentUrl || '',
                                 });
+                                setIncFile(null);
                                 setShowIncomingModal(true);
                               }}
-                              className="p-1.5 rounded bg-[#161b24] hover:bg-slate-700 text-slate-300">
+                              className="p-1.5 rounded bg-[#161b24] hover:bg-slate-700 text-slate-300"
+                              title="Edit Record">
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteIncoming(item.id)}
-                              className="p-1.5 rounded bg-[#161b24] hover:bg-rose-900/40 text-rose-400">
+                              className="p-1.5 rounded bg-[#161b24] hover:bg-rose-900/40 text-rose-400"
+                              title="Delete Record">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -686,6 +775,7 @@ export default function App() {
           </div>
         )}
 
+        {/* OUTGOING TABLE */}
         {activeTab === 'outgoing' && (
           <div className="p-8 space-y-4">
             <div className="flex justify-end items-center">
@@ -701,8 +791,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setOutgoingSearch('')}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs bg-[#161b24] hover:bg-slate-700 w-4 h-4 rounded-full flex items-center justify-center transition-colors"
-                    title="Clear search">
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs bg-[#161b24] hover:bg-slate-700 w-4 h-4 rounded-full flex items-center justify-center transition-colors">
                     ×
                   </button>
                 )}
@@ -721,15 +810,18 @@ export default function App() {
                       <th className="p-4 font-semibold">Description</th>
                       <th className="p-4 font-semibold text-right">Amount (£)</th>
                       <th className="p-4 font-semibold">Payment Type</th>
-                      <th className="p-4 font-semibold">Notes</th>
+                      <th className="p-4 font-semibold">Doc</th>
                       <th className="p-4 font-semibold text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800 text-slate-300">
                     {filteredOutgoingList.map(item => (
-                      <tr key={item.id} className="hover:bg-[#161b24]/30 transition-colors">
+                      <tr 
+                        key={item.id} 
+                        onClick={() => setViewingOutgoing(item)}
+                        className="hover:bg-[#161b24]/50 cursor-pointer transition-colors group">
                         <td className="p-4 font-mono text-xs">{item.date}</td>
-                        <td className="p-4 font-medium text-white">{item.seller}</td>
+                        <td className="p-4 font-medium text-white group-hover:text-[var(--primary-light)] transition-colors">{item.seller}</td>
                         <td className="p-4 font-mono text-xs text-slate-400">{item.orderNo || '-'}</td>
                         <td className="p-4 font-mono text-xs text-slate-400">{item.invoiceNo || '-'}</td>
                         <td className="p-4 text-slate-200">{item.description}</td>
@@ -749,9 +841,29 @@ export default function App() {
                             {item.paymentType}
                           </span>
                         </td>
-                        <td className="p-4 text-xs text-slate-400 max-w-xs truncate">{item.notes || '-'}</td>
-                        <td className="p-4 text-center">
+                        <td className="p-4">
+                          {item.documentUrl ? (
+                            <a 
+                              href={item.documentUrl} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-xs text-[var(--primary-light)] hover:underline">
+                              <Paperclip className="w-3.5 h-3.5" /> PDF
+                            </a>
+                          ) : (
+                            <span className="text-slate-600 text-xs">-</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setViewingOutgoing(item)}
+                              className="p-1.5 rounded bg-[#161b24] hover:bg-slate-700 text-slate-300"
+                              title="View Details">
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
                             <button
                               type="button"
                               onClick={() => {
@@ -765,15 +877,19 @@ export default function App() {
                                   amount: item.amount.toString(),
                                   paymentType: item.paymentType,
                                   notes: item.notes || '',
+                                  documentUrl: item.documentUrl || '',
                                 });
+                                setOutFile(null);
                                 setShowOutgoingModal(true);
                               }}
-                              className="p-1.5 rounded bg-[#161b24] hover:bg-slate-700 text-slate-300">
+                              className="p-1.5 rounded bg-[#161b24] hover:bg-slate-700 text-slate-300"
+                              title="Edit Record">
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteOutgoing(item.id)}
-                              className="p-1.5 rounded bg-[#161b24] hover:bg-rose-900/40 text-rose-400">
+                              className="p-1.5 rounded bg-[#161b24] hover:bg-rose-900/40 text-rose-400"
+                              title="Delete Record">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -794,6 +910,7 @@ export default function App() {
           </div>
         )}
 
+        {/* TAX YEARS MANAGEMENT */}
         {activeTab === 'tax-years' && (
           <div className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -825,6 +942,267 @@ export default function App() {
         )}
       </main>
 
+      {/* DETAILED VIEW MODAL - INCOMING */}
+      {viewingIncoming && (
+        <div className="fixed inset-0 bg-[#07090e]/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0d1015] border border-[#1e2633] rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setViewingIncoming(null)}
+              className="absolute right-5 top-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#161b24] transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6 border-b border-[#1e2633] pb-4">
+              <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 text-[var(--primary-light)] flex items-center justify-center border border-[var(--primary)]/20">
+                <ArrowDownRight className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--primary-light)]">Incoming Transaction</span>
+                <h3 className="text-lg font-bold text-white">{viewingIncoming.description}</h3>
+              </div>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div className="bg-[#161b24]/50 border border-[#1e2633] rounded-xl p-4 flex justify-between items-center">
+                <span className="text-slate-400 text-xs font-medium">Total Amount Received</span>
+                <span className="text-2xl font-bold font-mono text-[var(--primary-light)]">
+                  £{(viewingIncoming.cardAmount + viewingIncoming.cashAmount).toFixed(2)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-3">
+                  <span className="text-xs text-slate-500 block mb-1">Date</span>
+                  <span className="font-mono text-slate-200 text-xs flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" /> {viewingIncoming.date}
+                  </span>
+                </div>
+
+                <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-3">
+                  <span className="text-xs text-slate-500 block mb-1">Source / Channel</span>
+                  <span className="text-xs font-medium text-slate-200 flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-slate-400" /> {viewingIncoming.source}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-3">
+                  <span className="text-xs text-slate-500 block mb-1">Card Component</span>
+                  <span className="font-mono text-slate-200 text-xs">£{viewingIncoming.cardAmount.toFixed(2)}</span>
+                </div>
+
+                <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-3">
+                  <span className="text-xs text-slate-500 block mb-1">Cash Component</span>
+                  <span className="font-mono text-slate-200 text-xs">£{viewingIncoming.cashAmount.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* DOWNLOAD RECEIPT SECTION */}
+              <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <span className="text-xs text-slate-400 block font-medium">Attached Receipt / Document</span>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    {viewingIncoming.documentUrl ? 'Document attached to this transaction' : 'No document attached'}
+                  </p>
+                </div>
+                {viewingIncoming.documentUrl && (
+                  <a
+                    href={viewingIncoming.documentUrl}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--primary)]/20 hover:bg-[var(--primary)]/30 text-[var(--primary-light)] border border-[var(--primary)]/30 text-xs font-semibold transition-all">
+                    <Download className="w-3.5 h-3.5" /> Download PDF
+                  </a>
+                )}
+              </div>
+
+              <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-4">
+                <span className="text-xs text-slate-500 block mb-1 font-medium">Notes & Remarks</span>
+                <p className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
+                  {viewingIncoming.notes || 'No additional notes provided.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center mt-6 pt-4 border-t border-[#1e2633]">
+              <button
+                onClick={() => handleDeleteIncoming(viewingIncoming.id)}
+                className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 font-medium px-3 py-2 rounded-lg hover:bg-rose-900/20 transition-colors">
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const item = viewingIncoming;
+                    setViewingIncoming(null);
+                    setEditingIncoming(item);
+                    setIncForm({
+                      date: item.date,
+                      source: item.source,
+                      description: item.description,
+                      cardAmount: item.cardAmount.toString(),
+                      cashAmount: item.cashAmount.toString(),
+                      notes: item.notes || '',
+                      documentUrl: item.documentUrl || '',
+                    });
+                    setIncFile(null);
+                    setShowIncomingModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#161b24] hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors border border-[#283244]">
+                  <Edit2 className="w-3.5 h-3.5" /> Edit Record
+                </button>
+                <button
+                  onClick={() => setViewingIncoming(null)}
+                  className="px-4 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-semibold shadow-lg shadow-[var(--primary)]/20 transition-all">
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DETAILED VIEW MODAL - OUTGOING */}
+      {viewingOutgoing && (
+        <div className="fixed inset-0 bg-[#07090e]/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0d1015] border border-[#1e2633] rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setViewingOutgoing(null)}
+              className="absolute right-5 top-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#161b24] transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6 border-b border-[#1e2633] pb-4">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-wider text-rose-400">Outgoing Payment</span>
+                <h3 className="text-lg font-bold text-white">{viewingOutgoing.description}</h3>
+              </div>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div className="bg-[#161b24]/50 border border-[#1e2633] rounded-xl p-4 flex justify-between items-center">
+                <span className="text-slate-400 text-xs font-medium">Total Paid</span>
+                <span className="text-2xl font-bold font-mono text-rose-400">
+                  -£{viewingOutgoing.amount.toFixed(2)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-3">
+                  <span className="text-xs text-slate-500 block mb-1">Seller / Vendor</span>
+                  <span className="font-medium text-slate-200 text-xs flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-slate-400" /> {viewingOutgoing.seller}
+                  </span>
+                </div>
+
+                <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-3">
+                  <span className="text-xs text-slate-500 block mb-1">Date</span>
+                  <span className="font-mono text-slate-200 text-xs flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" /> {viewingOutgoing.date}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-3">
+                  <span className="text-xs text-slate-500 block mb-1">Order #</span>
+                  <span className="font-mono text-slate-200 text-xs flex items-center gap-1.5">
+                    <Hash className="w-3.5 h-3.5 text-slate-400" /> {viewingOutgoing.orderNo || 'N/A'}
+                  </span>
+                </div>
+
+                <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-3">
+                  <span className="text-xs text-slate-500 block mb-1">Invoice #</span>
+                  <span className="font-mono text-slate-200 text-xs flex items-center gap-1.5">
+                    <Hash className="w-3.5 h-3.5 text-slate-400" /> {viewingOutgoing.invoiceNo || 'N/A'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-3">
+                <span className="text-xs text-slate-500 block mb-1">Payment Method</span>
+                <span className="text-xs font-medium text-slate-200 flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-slate-400" /> {viewingOutgoing.paymentType}
+                </span>
+              </div>
+
+              {/* DOWNLOAD RECEIPT SECTION */}
+              <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <span className="text-xs text-slate-400 block font-medium">Attached Receipt / Document</span>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    {viewingOutgoing.documentUrl ? 'Scanned receipt or invoice attached' : 'No document attached'}
+                  </p>
+                </div>
+                {viewingOutgoing.documentUrl && (
+                  <a
+                    href={viewingOutgoing.documentUrl}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 text-xs font-semibold transition-all">
+                    <Download className="w-3.5 h-3.5" /> Download PDF
+                  </a>
+                )}
+              </div>
+
+              <div className="bg-[#161b24]/30 border border-[#1e2633] rounded-xl p-4">
+                <span className="text-xs text-slate-500 block mb-1 font-medium">Notes & Details</span>
+                <p className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
+                  {viewingOutgoing.notes || 'No additional notes provided.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center mt-6 pt-4 border-t border-[#1e2633]">
+              <button
+                onClick={() => handleDeleteOutgoing(viewingOutgoing.id)}
+                className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 font-medium px-3 py-2 rounded-lg hover:bg-rose-900/20 transition-colors">
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const item = viewingOutgoing;
+                    setViewingOutgoing(null);
+                    setEditingOutgoing(item);
+                    setOutForm({
+                      date: item.date,
+                      seller: item.seller,
+                      orderNo: item.orderNo || '',
+                      invoiceNo: item.invoiceNo || '',
+                      description: item.description,
+                      amount: item.amount.toString(),
+                      paymentType: item.paymentType,
+                      notes: item.notes || '',
+                      documentUrl: item.documentUrl || '',
+                    });
+                    setOutFile(null);
+                    setShowOutgoingModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#161b24] hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors border border-[#283244]">
+                  <Edit2 className="w-3.5 h-3.5" /> Edit Record
+                </button>
+                <button
+                  onClick={() => setViewingOutgoing(null)}
+                  className="px-4 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-semibold shadow-lg shadow-[var(--primary)]/20 transition-all">
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE/EDIT INCOMING MODAL WITH FILE UPLOAD */}
       {showIncomingModal && (
         <div className="fixed inset-0 bg-[#07090e]/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-[#0d1015] border border-[#1e2633] rounded-2xl max-w-md w-full p-6 shadow-2xl">
@@ -887,6 +1265,24 @@ export default function App() {
                 </div>
               </div>
 
+              {/* FILE UPLOAD INPUT */}
+              <div>
+                <label className="block text-slate-400 mb-1">Attach Scanned Receipt / Document (PDF)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={(e) => setIncFile(e.target.files?.[0] || null)}
+                    className="w-full bg-[#161b24] border border-[#283244] text-slate-300 text-xs rounded-lg p-2 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:bg-[var(--primary)]/20 file:text-[var(--primary-light)] cursor-pointer"
+                  />
+                </div>
+                {incForm.documentUrl && !incFile && (
+                  <p className="text-[11px] text-teal-400 mt-1 flex items-center gap-1">
+                    <FileCheck className="w-3 h-3" /> Existing document attached
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-slate-400 mb-1">Notes</label>
                 <textarea
@@ -906,7 +1302,9 @@ export default function App() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold shadow-lg shadow-[var(--primary)]/20 transition-all">
+                  disabled={uploading}
+                  className="px-4 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold shadow-lg shadow-[var(--primary)]/20 transition-all flex items-center gap-2">
+                  {uploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Save Record
                 </button>
               </div>
@@ -915,6 +1313,7 @@ export default function App() {
         </div>
       )}
 
+      {/* CREATE/EDIT OUTGOING MODAL WITH FILE UPLOAD */}
       {showOutgoingModal && (
         <div className="fixed inset-0 bg-[#07090e]/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-[#0d1015] border border-[#1e2633] rounded-2xl max-w-md w-full p-6 shadow-2xl">
@@ -1002,6 +1401,24 @@ export default function App() {
                 </div>
               </div>
 
+              {/* FILE UPLOAD INPUT */}
+              <div>
+                <label className="block text-slate-400 mb-1">Attach Scanned Receipt / Document (PDF)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={(e) => setOutFile(e.target.files?.[0] || null)}
+                    className="w-full bg-[#161b24] border border-[#283244] text-slate-300 text-xs rounded-lg p-2 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:bg-[var(--primary)]/20 file:text-[var(--primary-light)] cursor-pointer"
+                  />
+                </div>
+                {outForm.documentUrl && !outFile && (
+                  <p className="text-[11px] text-teal-400 mt-1 flex items-center gap-1">
+                    <FileCheck className="w-3 h-3" /> Existing document attached
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-slate-400 mb-1">Notes</label>
                 <textarea
@@ -1024,7 +1441,9 @@ export default function App() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold shadow-lg shadow-[var(--primary)]/20 transition-all">
+                  disabled={uploading}
+                  className="px-4 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold shadow-lg shadow-[var(--primary)]/20 transition-all flex items-center gap-2">
+                  {uploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Save Record
                 </button>
               </div>
@@ -1033,6 +1452,7 @@ export default function App() {
         </div>
       )}
 
+      {/* TAX YEAR MODAL */}
       {showTaxYearModal && (
         <div className="fixed inset-0 bg-[#07090e]/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-[#0d1015] border border-[#1e2633] rounded-2xl max-w-md w-full p-6 shadow-2xl">
