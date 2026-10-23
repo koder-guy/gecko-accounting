@@ -42,17 +42,12 @@ interface OutgoingItem {
   notes: string;
 }
 
-// ==========================================
-// CENTRALIZED THEME CONFIGURATION
-// Change the primary accent color here to instantly 
-// re-theme the entire application (buttons, charts, badges, etc.)!
-// ==========================================
 const THEME = {
-  primary: '#3b82f6',        // Blue 500
-  primaryHover: '#2563eb',   // Blue 600
-  primaryLight: '#60a5fa',   // Blue 400
-  gradientFrom: '#2563eb',
-  gradientTo: '#38bdf8',     // Sky 400
+  primary: '#5e6ad2',        //Indigo Accent (#5e6ad2)
+  primaryHover: '#4b55c2',   //Darker Indigo Hover
+  primaryLight: '#828df0',   //Light Indigo
+  gradientFrom: '#5e6ad2',   //Gradient Start
+  gradientTo: '#939aff',     //Gradient End
 };
 
 export default function App() {
@@ -306,7 +301,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-slate-950 items-center justify-center text-slate-100">
+      <div className="flex h-screen bg-[#07090e] items-center justify-center text-slate-100">
         <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
       </div>
     );
@@ -314,17 +309,17 @@ export default function App() {
 
   return (
     <div 
-      className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans"
+      className="flex h-screen bg-[#07090e] text-slate-100 overflow-hidden font-sans"
       style={{
         '--primary': THEME.primary,
         '--primary-hover': THEME.primaryHover,
         '--primary-light': THEME.primaryLight,
       } as React.CSSProperties}
     >
-      <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between">
+      <aside className="w-64 bg-[#0d1015] border-r border-[#1e2633] flex flex-col justify-between">
         <div>
-          <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-slate-950 shadow-lg shadow-[var(--primary)]/20">
+          <div className="p-6 flex items-center gap-3 border-b border-[#1e2633]">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-400 flex items-center justify-center text-slate-950 shadow-lg shadow-[var(--primary)]/20">
               <Wallet className="w-6 h-6 stroke-[2.5]" />
             </div>
             <div>
@@ -333,7 +328,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="p-4 border-b border-slate-800/80 bg-slate-900/50">
+          <div className="p-4 border-b border-[#1e2633]/80 bg-[#0d1015]/50">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
               Active Tax Year
             </label>
@@ -341,7 +336,7 @@ export default function App() {
               <select
                 value={selectedTaxYearId}
                 onChange={(e) => setSelectedTaxYearId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none appearance-none cursor-pointer">
+                className="w-full bg-[#161b24] border border-[#283244] text-slate-100 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none appearance-none cursor-pointer">
                 {taxYears.map(ty => (
                   <option key={ty.id} value={ty.id}>
                     Tax Year {ty.label} {ty.isCurrent ? '(Current)' : ''}
@@ -358,7 +353,7 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === 'dashboard' 
                   ? 'bg-[var(--primary)]/10 text-[var(--primary-light)] border border-[var(--primary)]/20' 
-                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                  : 'text-slate-400 hover:bg-[#161b24]/60 hover:text-slate-200'
               }`}>
               <TrendingUp className="w-4 h-4" />
               Dashboard
@@ -369,13 +364,13 @@ export default function App() {
               className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === 'incoming' 
                   ? 'bg-[var(--primary)]/10 text-[var(--primary-light)] border border-[var(--primary)]/20' 
-                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                  : 'text-slate-400 hover:bg-[#161b24]/60 hover:text-slate-200'
               }`}>
               <div className="flex items-center gap-3">
                 <ArrowDownRight className="w-4 h-4 text-[var(--primary-light)]" />
                 Incoming
               </div>
-              <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-400">{incomingList.length}</span>
+              <span className="text-xs bg-[#161b24] px-2 py-0.5 rounded-full text-slate-400">{incomingList.length}</span>
             </button>
 
             <button
@@ -383,13 +378,13 @@ export default function App() {
               className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === 'outgoing' 
                   ? 'bg-[var(--primary)]/10 text-[var(--primary-light)] border border-[var(--primary)]/20' 
-                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                  : 'text-slate-400 hover:bg-[#161b24]/60 hover:text-slate-200'
               }`}>
               <div className="flex items-center gap-3">
                 <ArrowUpRight className="w-4 h-4 text-rose-400" />
                 Outgoing
               </div>
-              <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-400">{outgoingList.length}</span>
+              <span className="text-xs bg-[#161b24] px-2 py-0.5 rounded-full text-slate-400">{outgoingList.length}</span>
             </button>
 
             <button
@@ -397,7 +392,7 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === 'tax-years' 
                   ? 'bg-[var(--primary)]/10 text-[var(--primary-light)] border border-[var(--primary)]/20' 
-                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                  : 'text-slate-400 hover:bg-[#161b24]/60 hover:text-slate-200'
               }`}>
               <Layers className="w-4 h-4" />
               Tax Years Management
@@ -405,14 +400,14 @@ export default function App() {
           </nav>
         </div>
 
-        <div className="p-4 border-t border-slate-800 text-xs text-slate-500">
+        <div className="p-4 border-t border-[#1e2633] text-xs text-slate-500">
           <p className="font-semibold text-slate-400">Gecko Bookkeeping v1.0</p>
           <p className="mt-1">MySQL Persistent Database</p>
         </div>
       </aside>
 
       <main className="flex-1 flex flex-col overflow-y-auto">
-        <header className="bg-slate-900/60 backdrop-blur-md border-b border-slate-800 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+        <header className="bg-[#0d1015]/60 backdrop-blur-md border-b border-[#1e2633] px-8 py-4 flex items-center justify-between sticky top-0 z-10">
           <div>
             <h2 className="text-xl font-bold text-white capitalize">{activeTab.replace('-', ' ')}</h2>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -424,7 +419,7 @@ export default function App() {
             {(activeTab === 'incoming' || activeTab === 'outgoing') && (
               <button
                 onClick={() => exportCSV(activeTab)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors border border-slate-700">
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#161b24] hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors border border-[#283244]">
                 <Download className="w-3.5 h-3.5" /> Export CSV
               </button>
             )}
@@ -467,7 +462,7 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <div className="p-8 space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+              <div className="bg-[#0d1015] border border-[#1e2633] rounded-xl p-5">
                 <div className="flex items-center justify-between text-slate-400 mb-3">
                   <span className="text-xs font-medium uppercase tracking-wider">Total Income</span>
                   <div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 text-[var(--primary-light)] flex items-center justify-center">
@@ -478,7 +473,7 @@ export default function App() {
                 <p className="text-xs text-slate-500 mt-2">Combined Card + Cash</p>
               </div>
 
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+              <div className="bg-[#0d1015] border border-[#1e2633] rounded-xl p-5">
                 <div className="flex items-center justify-between text-slate-400 mb-3">
                   <span className="text-xs font-medium uppercase tracking-wider">Square Card Income</span>
                   <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
@@ -489,7 +484,7 @@ export default function App() {
                 <p className="text-xs text-slate-500 mt-2">Card payments</p>
               </div>
 
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+              <div className="bg-[#0d1015] border border-[#1e2633] rounded-xl p-5">
                 <div className="flex items-center justify-between text-slate-400 mb-3">
                   <span className="text-xs font-medium uppercase tracking-wider">Total Outgoing</span>
                   <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
@@ -500,7 +495,7 @@ export default function App() {
                 <p className="text-xs text-slate-500 mt-2">Expenses recorded</p>
               </div>
 
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+              <div className="bg-[#0d1015] border border-[#1e2633] rounded-xl p-5">
                 <div className="flex items-center justify-between text-slate-400 mb-3">
                   <span className="text-xs font-medium uppercase tracking-wider">Net Profit</span>
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${netProfit >= 0 ? 'bg-[var(--primary)]/10 text-[var(--primary-light)]' : 'bg-rose-500/10 text-rose-400'}`}>
@@ -515,7 +510,7 @@ export default function App() {
             </div>
 
             {/* Monthly Financial Overview Chart */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <div className="bg-[#0d1015] border border-[#1e2633] rounded-xl p-6">
               <h3 className="font-semibold text-white text-sm mb-6 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-[var(--primary-light)]" /> Monthly Incoming vs Outgoing
               </h3>
@@ -532,20 +527,8 @@ export default function App() {
                         formatter={(value: any) => [`£${Number(value).toFixed(2)}`, '']}
                       />
                       <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                      <Bar 
-                        dataKey="incoming" 
-                        name="Incoming (£)" 
-                        fill={THEME.primary} 
-                        radius={[4, 4, 0, 0]} 
-                        barSize={40} 
-                      />
-                      <Bar 
-                        dataKey="outgoing" 
-                        name="Outgoing (£)" 
-                        fill="#f43f5e" 
-                        radius={[4, 4, 0, 0]} 
-                        barSize={40} 
-                      />
+                      <Bar dataKey="incoming" name="Incoming (£)" fill={THEME.primary} radius={[4, 4, 0, 0]} barSize={40} />
+                      <Bar dataKey="outgoing" name="Outgoing (£)" fill="#ba2233" radius={[4, 4, 0, 0]} barSize={40} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -557,7 +540,7 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+              <div className="bg-[#0d1015] border border-[#1e2633] rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-white text-sm flex items-center gap-2">
                     <ArrowDownRight className="w-4 h-4 text-[var(--primary-light)]" /> Recent Incoming Sales
@@ -566,7 +549,7 @@ export default function App() {
                 </div>
                 <div className="space-y-3">
                   {incomingList.slice(0, 5).map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/40 border border-slate-800">
+                    <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-[#161b24]/40 border border-[#1e2633]">
                       <div>
                         <p className="text-sm font-medium text-slate-200">{item.description}</p>
                         <p className="text-xs text-slate-500">{item.date} • {item.source}</p>
@@ -578,7 +561,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+              <div className="bg-[#0d1015] border border-[#1e2633] rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-white text-sm flex items-center gap-2">
                     <ArrowUpRight className="w-4 h-4 text-rose-400" /> Recent Outgoing Payments
@@ -587,7 +570,7 @@ export default function App() {
                 </div>
                 <div className="space-y-3">
                   {outgoingList.slice(0, 5).map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/40 border border-slate-800">
+                    <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-[#161b24]/40 border border-[#1e2633]">
                       <div>
                         <p className="text-sm font-medium text-slate-200">{item.description}</p>
                         <p className="text-xs text-slate-500">{item.date} • {item.seller}</p>
@@ -611,13 +594,13 @@ export default function App() {
                   placeholder="Search description or notes..."
                   value={incomingSearch}
                   onChange={(e) => setIncomingSearch(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-xs rounded-lg pl-9 pr-8 py-2 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none placeholder-slate-500"/>
+                  className="w-full bg-[#0d1015] border border-[#1e2633] text-slate-100 text-xs rounded-lg pl-9 pr-8 py-2 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none placeholder-slate-500"/>
                 <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
                 {incomingSearch && (
                   <button
                     type="button"
                     onClick={() => setIncomingSearch('')}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs bg-slate-800 hover:bg-slate-700 w-4 h-4 rounded-full flex items-center justify-center transition-colors"
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs bg-[#161b24] hover:bg-slate-700 w-4 h-4 rounded-full flex items-center justify-center transition-colors"
                     title="Clear search">
                     ×
                   </button>
@@ -625,11 +608,11 @@ export default function App() {
               </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+            <div className="bg-[#0d1015] border border-[#1e2633] rounded-xl overflow-hidden shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-800/60 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                    <tr className="bg-[#161b24]/60 text-slate-400 text-xs uppercase tracking-wider border-b border-[#1e2633]">
                       <th className="p-4 font-semibold">Date</th>
                       <th className="p-4 font-semibold">Source</th>
                       <th className="p-4 font-semibold">Description</th>
@@ -642,7 +625,7 @@ export default function App() {
                   </thead>
                   <tbody className="divide-y divide-slate-800 text-slate-300">
                     {filteredIncomingList.map(item => (
-                      <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+                      <tr key={item.id} className="hover:bg-[#161b24]/30 transition-colors">
                         <td className="p-4 font-mono text-xs">{item.date}</td>
                         <td className="p-4">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
@@ -677,12 +660,12 @@ export default function App() {
                                 });
                                 setShowIncomingModal(true);
                               }}
-                              className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">
+                              className="p-1.5 rounded bg-[#161b24] hover:bg-slate-700 text-slate-300">
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteIncoming(item.id)}
-                              className="p-1.5 rounded bg-slate-800 hover:bg-rose-900/40 text-rose-400">
+                              className="p-1.5 rounded bg-[#161b24] hover:bg-rose-900/40 text-rose-400">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -712,13 +695,13 @@ export default function App() {
                   placeholder="Search seller, order, invoice..."
                   value={outgoingSearch}
                   onChange={(e) => setOutgoingSearch(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-xs rounded-lg pl-9 pr-8 py-2 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none placeholder-slate-500"/>
+                  className="w-full bg-[#0d1015] border border-[#1e2633] text-slate-100 text-xs rounded-lg pl-9 pr-8 py-2 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none placeholder-slate-500"/>
                 <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
                 {outgoingSearch && (
                   <button
                     type="button"
                     onClick={() => setOutgoingSearch('')}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs bg-slate-800 hover:bg-slate-700 w-4 h-4 rounded-full flex items-center justify-center transition-colors"
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs bg-[#161b24] hover:bg-slate-700 w-4 h-4 rounded-full flex items-center justify-center transition-colors"
                     title="Clear search">
                     ×
                   </button>
@@ -726,11 +709,11 @@ export default function App() {
               </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+            <div className="bg-[#0d1015] border border-[#1e2633] rounded-xl overflow-hidden shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-800/60 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                    <tr className="bg-[#161b24]/60 text-slate-400 text-xs uppercase tracking-wider border-b border-[#1e2633]">
                       <th className="p-4 font-semibold">Date</th>
                       <th className="p-4 font-semibold">Seller</th>
                       <th className="p-4 font-semibold">Order #</th>
@@ -744,7 +727,7 @@ export default function App() {
                   </thead>
                   <tbody className="divide-y divide-slate-800 text-slate-300">
                     {filteredOutgoingList.map(item => (
-                      <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+                      <tr key={item.id} className="hover:bg-[#161b24]/30 transition-colors">
                         <td className="p-4 font-mono text-xs">{item.date}</td>
                         <td className="p-4 font-medium text-white">{item.seller}</td>
                         <td className="p-4 font-mono text-xs text-slate-400">{item.orderNo || '-'}</td>
@@ -761,7 +744,7 @@ export default function App() {
                               ? 'bg-[var(--primary)]/10 text-[var(--primary-light)] border-[var(--primary)]/20'
                               : item.paymentType === 'Direct Debit'
                               ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
-                              : 'bg-slate-800 text-slate-300 border-slate-700'
+                              : 'bg-[#161b24] text-slate-300 border-[#283244]'
                           }`}>
                             {item.paymentType}
                           </span>
@@ -785,12 +768,12 @@ export default function App() {
                                 });
                                 setShowOutgoingModal(true);
                               }}
-                              className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">
+                              className="p-1.5 rounded bg-[#161b24] hover:bg-slate-700 text-slate-300">
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteOutgoing(item.id)}
-                              className="p-1.5 rounded bg-slate-800 hover:bg-rose-900/40 text-rose-400">
+                              className="p-1.5 rounded bg-[#161b24] hover:bg-rose-900/40 text-rose-400">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -815,7 +798,7 @@ export default function App() {
           <div className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {taxYears.map(ty => (
-                <div key={ty.id} className="bg-slate-900 border border-slate-800 rounded-xl p-6 relative">
+                <div key={ty.id} className="bg-[#0d1015] border border-[#1e2633] rounded-xl p-6 relative">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold text-white">Tax Year {ty.label}</h3>
                     {ty.isCurrent && (
@@ -828,7 +811,7 @@ export default function App() {
                     <p>Start Date: <span className="text-slate-200">{ty.startDate ? ty.startDate.toString().split('T')[0] : '-'}</span></p>
                     <p>End Date: <span className="text-slate-200">{ty.endDate ? ty.endDate.toString().split('T')[0] : '-'}</span></p>
                   </div>
-                  <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+                  <div className="mt-6 pt-4 border-t border-[#1e2633]/80 flex items-center justify-between">
                     <button
                       onClick={() => setSelectedTaxYearId(ty.id)}
                       className="text-xs text-[var(--primary-light)] hover:underline font-medium">
@@ -843,8 +826,8 @@ export default function App() {
       </main>
 
       {showIncomingModal && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+        <div className="fixed inset-0 bg-[#07090e]/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0d1015] border border-[#1e2633] rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-4">
               {editingIncoming ? 'Edit Incoming Transaction' : 'Record Incoming Transaction'}
             </h3>
@@ -856,7 +839,7 @@ export default function App() {
                   required
                   value={incForm.date}
                   onChange={(e) => setIncForm({ ...incForm, date: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                  className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
               </div>
 
               <div>
@@ -864,7 +847,7 @@ export default function App() {
                 <select
                   value={incForm.source}
                   onChange={(e) => setIncForm({ ...incForm, source: e.target.value as any })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100">
+                  className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100">
                   <option value="Square">Square</option>
                   <option value="Card">Card</option>
                   <option value="Cash">Cash</option>
@@ -879,7 +862,7 @@ export default function App() {
                   placeholder="e.g. Pop-up Event Sales"
                   value={incForm.description}
                   onChange={(e) => setIncForm({ ...incForm, description: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                  className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -890,7 +873,7 @@ export default function App() {
                     step="0.01"
                     value={incForm.cardAmount}
                     onChange={(e) => setIncForm({ ...incForm, cardAmount: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 font-mono"/>
+                    className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100 font-mono"/>
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1">Cash Amount (£)</label>
@@ -899,7 +882,7 @@ export default function App() {
                     step="0.01"
                     value={incForm.cashAmount}
                     onChange={(e) => setIncForm({ ...incForm, cashAmount: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 font-mono"
+                    className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100 font-mono"
                   />
                 </div>
               </div>
@@ -911,14 +894,14 @@ export default function App() {
                   placeholder="Optional notes..."
                   value={incForm.notes}
                   onChange={(e) => setIncForm({ ...incForm, notes: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                  className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
               </div>
 
               <div className="flex justify-end gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowIncomingModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors">
+                  className="px-4 py-2 rounded-lg bg-[#161b24] hover:bg-slate-700 text-slate-300 font-medium transition-colors">
                   Cancel
                 </button>
                 <button
@@ -933,8 +916,8 @@ export default function App() {
       )}
 
       {showOutgoingModal && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+        <div className="fixed inset-0 bg-[#07090e]/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0d1015] border border-[#1e2633] rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-4">
               {editingOutgoing ? 'Edit Outgoing Transaction' : 'Record Outgoing Transaction'}
             </h3>
@@ -947,7 +930,7 @@ export default function App() {
                     required
                     value={outForm.date}
                     onChange={(e) => setOutForm({ ...outForm, date: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                    className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1">Seller</label>
@@ -957,7 +940,7 @@ export default function App() {
                     placeholder="e.g. Supplier Name"
                     value={outForm.seller}
                     onChange={(e) => setOutForm({ ...outForm, seller: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                    className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
                 </div>
               </div>
 
@@ -969,7 +952,7 @@ export default function App() {
                     placeholder="e.g. ORD-102"
                     value={outForm.orderNo}
                     onChange={(e) => setOutForm({ ...outForm, orderNo: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                    className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1">Invoice Number</label>
@@ -978,7 +961,7 @@ export default function App() {
                     placeholder="e.g. INV-501"
                     value={outForm.invoiceNo}
                     onChange={(e) => setOutForm({ ...outForm, invoiceNo: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                    className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
                 </div>
               </div>
 
@@ -990,7 +973,7 @@ export default function App() {
                   placeholder="e.g. Studio Rent or Materials"
                   value={outForm.description}
                   onChange={(e) => setOutForm({ ...outForm, description: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                  className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -1002,14 +985,14 @@ export default function App() {
                     required
                     value={outForm.amount}
                     onChange={(e) => setOutForm({ ...outForm, amount: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100 font-mono"/>
+                    className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100 font-mono"/>
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1">Payment Type</label>
                   <select
                     value={outForm.paymentType}
                     onChange={(e) => setOutForm({ ...outForm, paymentType: e.target.value as any })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100">
+                    className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100">
                     <option value="Card">Card</option>
                     <option value="Cash">Cash</option>
                     <option value="Bank Transfer">Bank Transfer</option>
@@ -1026,7 +1009,7 @@ export default function App() {
                   placeholder="Optional notes..."
                   value={outForm.notes}
                   onChange={(e) => setOutForm({ ...outForm, notes: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                  className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
               </div>
 
               <div className="flex justify-end gap-3 pt-3">
@@ -1036,7 +1019,7 @@ export default function App() {
                     setShowOutgoingModal(false);
                     setEditingOutgoing(null);
                   }}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors">
+                  className="px-4 py-2 rounded-lg bg-[#161b24] hover:bg-slate-700 text-slate-300 font-medium transition-colors">
                   Cancel
                 </button>
                 <button
@@ -1051,8 +1034,8 @@ export default function App() {
       )}
 
       {showTaxYearModal && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+        <div className="fixed inset-0 bg-[#07090e]/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0d1015] border border-[#1e2633] rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-4">Create Tax Year</h3>
             <form onSubmit={handleCreateTaxYear} className="space-y-4 text-xs">
               <div>
@@ -1063,7 +1046,7 @@ export default function App() {
                   placeholder="e.g. 2025/26"
                   value={taxYearForm.label}
                   onChange={(e) => setTaxYearForm({ ...taxYearForm, label: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"
+                  className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"
                 />
               </div>
               <div>
@@ -1073,7 +1056,7 @@ export default function App() {
                   required
                   value={taxYearForm.startDate}
                   onChange={(e) => setTaxYearForm({ ...taxYearForm, startDate: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                  className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
               </div>
               <div>
                 <label className="block text-slate-400 mb-1">End Date</label>
@@ -1082,13 +1065,13 @@ export default function App() {
                   required
                   value={taxYearForm.endDate}
                   onChange={(e) => setTaxYearForm({ ...taxYearForm, endDate: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-100"/>
+                  className="w-full bg-[#161b24] border border-[#283244] rounded-lg p-2.5 text-slate-100"/>
               </div>
               <div className="flex justify-end gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowTaxYearModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors">
+                  className="px-4 py-2 rounded-lg bg-[#161b24] hover:bg-slate-700 text-slate-300 font-medium transition-colors">
                   Cancel
                 </button>
                 <button
@@ -1104,3 +1087,4 @@ export default function App() {
     </div>
   );
 }
+
